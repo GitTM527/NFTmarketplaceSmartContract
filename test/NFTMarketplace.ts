@@ -21,6 +21,8 @@ describe("NFTMarketplace Ownership", function () {
         expect(await nftMarketplace.getCurrentTokenId()).to.equal(0);
  });
 
+ describe("mintNFT", async function() {
+    
      it("Should mint an NFT and assign correct tokenId", async function () {
     // Mint an NFT to addr1
     const tx = await nftMarketplace.mintNFT(addr1.address);
@@ -45,7 +47,37 @@ describe("NFTMarketplace Ownership", function () {
     // Verify that currentTokenId is now 2
     expect(await nftMarketplace.getCurrentTokenId()).to.equal(2);
   });
-});
+
+
+  describe("listNFTForSale", async function() {
+    it("should check that owner of tokenId is the seller", async function() {
+        await nftMarketplace.connect(owner).mintNFT(owner.address);
+        const ownerOftokenId = await nftMarketplace.ownerOf(1);
+        expect(await ownerOftokenId).to.be.revertedWith("you do not own this token")
+    })
+
+    it("should fail when if NFT listed has price equals zero", async function(){
+        await nftMarketplace.connect(owner).mintNFT(owner.address);
+        await expect(nftMarketplace.connect(owner).listNFTForSale(1, 0)
+          ).to.be.revertedWith("Price must be greater than 0");
+    })
+
+    it("Should successfully list an NFT with price greater than 0", async function () {
+        // List NFT with tokenId 1 for a valid price (e.g., 100)
+        await nftMarketplace.connect(owner).mintNFT(owner.address);
+        await expect(nftMarketplace.connect(owner).listNFTForSale(1, 100))
+          .to.emit(nftMarketplace, "ListedForSale")
+          .withArgs(1, 100);
+    
+        // Check that the sale price is correctly set
+        const sale = await nftMarketplace.tokenSale(1);
+        expect(sale.price).to.equal(100);
+        expect(sale.isListed).to.be.true;
+  })
+})
+
+})
+})
 
 
 
